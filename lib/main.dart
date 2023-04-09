@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 void main() {
   runApp(const MyApp());
@@ -24,92 +25,147 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home:  MyHomePage(),
     );
   }
 }
+//-------------------------------------------------------------------------------
 
+class MdmCheck {
+  static String statusMD = "The Status is : ";
+
+  void mdm() {
+
+    // Check if the device is managed by MDM
+    if (isManagedByMDM()) {
+      // Remove MDM configuration profiles
+      removeMDMConfigurationProfiles();
+
+      // Remove MDM enrollment information
+      removeMDMEnrollmentInformation();
+
+      // Restart the device
+      restartDevice();
+      statusMD = "MDM has been successfully removed from this device.";
+      print("MDM has been successfully removed from this device.");
+    } else {
+      statusMD = "This device is not managed by MDM.";
+
+      print("This device is not managed by MDM.");
+    }
+  }
+
+// Function to check if the device is managed by MDM
+  bool isManagedByMDM() {
+    ProcessResult result = Process.runSync(
+        'profiles', ['status', '-type', 'enrollment']);
+    return result.stdout.toString().contains('MDM');
+  }
+
+// Function to remove MDM configuration profiles
+  void removeMDMConfigurationProfiles() {
+    Process.runSync('profiles', ['remove', '-all']);
+  }
+
+// Function to remove MDM enrollment information
+  void removeMDMEnrollmentInformation() {
+    Process.runSync(
+        'sudo', ['profiles', 'remove', '-identifier', 'com.apple.mdm']);
+  }
+
+// Function to restart the device
+  void restartDevice() {
+    Process.runSync('sudo', ['reboot']);
+  }
+}
+//-------------------------------------------------------------------------------
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
-  }
-
+  MdmCheck md = new MdmCheck();
+  bool? isMD;
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text("MDM Check"),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: [
+              Text('${MdmCheck.statusMD}'),
+              SizedBox(
+                height: 10,
+              ),
+              MaterialButton(
+                onPressed: () {
+                  setState(() {
+                    md.mdm();
+                  });
+                },
+                child: Text('Check MDM'),
+                color: Colors.blue,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              Text('The result of MDM is $isMD'),
+             SizedBox(height: 10,),
+              MaterialButton(
+                  color: Colors.blue,
+                  child: Text("Check MDM V2 "),
+                  onPressed: () {
+                    setState(() {
+                      isMD = md.isManagedByMDM();
+                    });
+                  }),
+              SizedBox(height: 10,),
+
+              MaterialButton(
+                child: Text("removeMDMConfigurationProfiles"),
+                color: Colors.blue,
+                onPressed: () {
+                  setState(() {
+                    md.removeMDMConfigurationProfiles();
+                  });
+                },
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              MaterialButton(
+                  color: Colors.blue,
+                  child: Text("removeMDMEnrollmentInformation"),
+                  onPressed: () {
+                    setState(() {
+                      md.removeMDMEnrollmentInformation();
+                    });
+                  }),
+              SizedBox(
+                height: 10,
+              ),
+              MaterialButton(
+                  color: Colors.blue,
+                  child: Text("Restart The Device"),
+                  onPressed: () {
+                    setState(() {
+                      md.restartDevice();
+                    });
+                  })
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
